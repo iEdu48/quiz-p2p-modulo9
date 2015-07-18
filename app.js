@@ -42,7 +42,26 @@ app.use(function(req, res, next) {
     next();
 });
 
-app.use('/', routes);
+// app.use('/', routes);
+
+app.use('/', function(req, res, next) {
+    var hora_actual = new Date();
+    var hora_inicial = req.session.time ? new Date(req.session.time) : new Date();
+    if (!req.path.match(/\/login|\/logout/)) {
+        if ((hora_actual.getMinutes() - 2) > hora_inicial.getMinutes()) {
+            req.session.errors = [{"message": 'Su sesión ha caducado: REALICE LOGIN.'}];
+            delete req.session.user;
+            res.render('sessions/new', {errors: req.session.errors});
+        }
+        else {
+            req.session.time = new Date();  // Dentro del tiempo, actualiza el momento inicial
+            next();
+        }
+    }
+    else {
+        next();
+    }
+}, routes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
